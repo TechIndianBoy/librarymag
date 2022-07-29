@@ -33,7 +33,7 @@ class LibmagController extends ActiveController
 
     public function actions()
     {
-        
+
         return [];
     }
 
@@ -52,7 +52,7 @@ class LibmagController extends ActiveController
         $behaviors['verbs'] = [
             'class' => \yii\filters\VerbFilter::className(),
             'actions' => [
-                
+
                 'interact' => ['get'],
                 // 'view' => ['get'],
                 // 'create' => ['post'],
@@ -71,7 +71,7 @@ class LibmagController extends ActiveController
                 'me' => ['get', 'post'],
             ],
         ];
-        
+
         // remove authentication filter
         $auth = $behaviors['authenticator'];
         unset($behaviors['authenticator']);
@@ -89,7 +89,7 @@ class LibmagController extends ActiveController
                 'Access-Control-Allow-Origin' => ['*'],
             ],
         ];
-      
+
         // re-add authentication filter
         $behaviors['authenticator'] = $auth;
         // avoid authentication on CORS-pre-flight requests (HTTP OPTIONS method)
@@ -139,13 +139,13 @@ class LibmagController extends ActiveController
     }
 
     public function actionEnteruser()
-    { 
+    {
         $userone = new Usertable();
         $role    = new Role();
         $body    = file_get_contents('php://input');
-        
+
         $user = json_decode($body);
-        
+
         foreach($user as $ky => $vl){
             $arruser[$ky ] =  $vl;
         }
@@ -165,7 +165,7 @@ class LibmagController extends ActiveController
                 $usrmodel->generateAccessToken();
                 $password = $arruser['u_password'];
                 $hash = Yii::$app->getSecurity()->generatePasswordHash($password);
-        
+
                 $userone -> u_name = $arruser['u_name'];
                 $userone -> u_username = $arruser['u_username'];
                 $userone -> u_email = $arruser['u_email'];
@@ -178,12 +178,12 @@ class LibmagController extends ActiveController
                 $userone -> access_token = $usrmodel->access_token;
                 $userone -> access_token_exp_date = date('Y-m-d H:i:s',$usrmodel->access_token_expired_at);
                 $userone -> save();
-        
+
                 $user_id = $userone -> returnuserid($arruser['u_username']);
-        
+
                 $role -> r_id = $user_id;
                 $role -> save();
-                return "user registered"; 
+                return "user registered";
                 }
                 catch(Exception $e){
                     throw new HttpException( 403 , $e->getMessage());
@@ -191,57 +191,57 @@ class LibmagController extends ActiveController
         }else{
             throw new HttpException(422,"username or email or phone number exists.!");
         }
-        
-        
+
+
     }
 
 
     public function actionLoginmethod()
     {
         $role = new Role();
-        
-        $username = Yii::$app->request->post('username');
+
+        $username = Yii::$app->request->post('username'); 
         $pwd      = Yii::$app->request->post('password');
 
         try{
 
             $sql  = "select u_password from users_table where u_username = '$username'";
             $rslt = Yii::$app->db->createCommand($sql)->query()->read();
-    
+
             $pwdrslt = Yii::$app->getSecurity()->validatePassword($pwd,$rslt["u_password"]);
-            
+
             if($pwdrslt == 1 ){
-    
+
                 $updateuser = new user;
                 $updateuser -> generateAccessToken();
-    
+
                 $new_access_token = $updateuser->access_token;
                 $new_exp_date = date('Y-m-d H:i:s',$updateuser -> access_token_expired_at);
-    
+
                 $sql = "UPDATE users_table
                         SET access_token = '$new_access_token',
                         access_token_exp_date = '$new_exp_date',
-                        u_updateddate = now() 
+                        u_updateddate = now()
                         WHERE u_username = '$username'";
-    
+
                 Yii::$app->db->createCommand($sql)->execute();
-                
+
             }
-    
+
             $userlogin = new Usertable();
             $rslt = $userlogin -> senddetailswhenlogin($username);
-            
+
             $ans['user_id']  = $rslt['u_id'];
             $ans['username'] = $rslt['u_username'];
             $ans['name']     = $rslt['u_name'];
             $ans['role_id']  = $role->returnroleid($rslt['u_id']);
             $ans['token']    = $rslt['access_token'];
-            
-    
+
+
             $msg = ["message" => "Login successfully",
                     "data" => $ans
                     ];
-    
+
             if($username == $rslt['u_username'] && $pwdrslt == 1){
                 return $msg;
             }
@@ -251,9 +251,9 @@ class LibmagController extends ActiveController
         }catch(exception $e){
             throw new HttpException(403,$e->getMessage());
         }
-        
-        
-        
+
+
+
     }
 
 
@@ -261,9 +261,9 @@ class LibmagController extends ActiveController
     {
 
         $userr = new Usertable();
-        
+
         $username = Yii::$app->request->get('username');
-        
+
         if($userr->validateuser($username) == 1){
 
             try{
@@ -278,7 +278,7 @@ class LibmagController extends ActiveController
             throw new HttpException(422,"invalid user");
         }
 
-    
+
 
     }
 
@@ -288,13 +288,13 @@ class LibmagController extends ActiveController
         $role  = new Role();
 
         $username = Yii::$app->request->get('username');
-        
+
         $user_id  = $userr->returnuserid($username);
         $role_id  = $role -> returnroleid($user_id);
 
         try{
             if($userr->validateuser($username) == 1 && $role_id == 0){
-                
+
                 $alluser = new Usertable();
                 return $alluser -> seealFluser();
 
@@ -311,14 +311,14 @@ class LibmagController extends ActiveController
         $newbook = new Book();
         $ispn    = new bookscopy();
         $body    = file_get_contents('php://input');
-        
+
         $book = json_decode($body);
-        
+
         try{
         foreach($book as $ky => $vl){
             $arrbook[$ky ] =  $vl;
         }
-        
+
         $newbook -> b_title = $arrbook['b_title'];
         $newbook -> b_author = $arrbook['b_author'];
         $newbook -> b_catagory = $arrbook['b_catagory'];
@@ -343,7 +343,7 @@ class LibmagController extends ActiveController
 
         }
         catch(Exception $e){
-            
+
             throw new HttpException(401, $e->getMessage());
         }
 
@@ -352,10 +352,10 @@ class LibmagController extends ActiveController
     public function actionUpdatepassword()
     {
         $userr = new Usertable();
-        
+
         $username    = Yii::$app->request->post('username');
         $newpassword = Yii::$app->request->post('newpassword');
-        try{     
+        try{
             if($userr->validateuser($username) == 1){
                 try{
                     $alluser = new Usertable();
@@ -377,28 +377,28 @@ class LibmagController extends ActiveController
         $date           = strtotime("+7 day");
         $exp_returndate = date('Y-m-d', $date);
         $currentdate    = date('Y-m-d');
-        
+
         $newtransaction = new Libtransaction();
         $userr          = new Usertable();
         $ispn           = new bookscopy();
 
         $username = Yii::$app->request->get('username');
-                
+
         $body = file_get_contents('php://input');
-        
+
         $transaction = json_decode($body);
 
-        
-        
+
+
         try{
-        
+
 
             if($userr->validateuser($username) == 1){
 
                 foreach($transaction as $ky => $vl){
                     $arrtrans[$ky ] =  $vl;
                 }
-                
+
                 $transaction_userid = $arrtrans["user_id"];
                 $transaction_bookid = $arrtrans["book_id"];
 
@@ -415,7 +415,7 @@ class LibmagController extends ActiveController
                     if($newtransaction->cantransact($transaction_userid,$transaction_bookid) == 0){
                         $msg = "same book can not be issues again to same user";
                         throw new HttpException(403,$msg);}
-                    
+
                     $newtransaction -> user_id = $transaction_userid;
                     $newtransaction -> book_id = $transaction_bookid;
                     $newtransaction -> copy_id = $copy_id;
@@ -435,7 +435,7 @@ class LibmagController extends ActiveController
                     }
                 }
 
-                
+
 
             }else{
                 throw new HttpException(422,"invalid user");
@@ -445,13 +445,13 @@ class LibmagController extends ActiveController
 
         }catch(Exception $e){
                 throw new HttpException(403,$e->getMessage());
-        
+
         }
     }
-    
+
     public function actionReturnbook()
     {
-        
+
         $returntrans = new Libtransaction();
         $userr       = new Usertable();
         $book        = new Book();
@@ -471,12 +471,12 @@ class LibmagController extends ActiveController
             }
 
             if($userr->validateuser($username) == 1 && $role_id == 0){
-                
+
                 $returntrans_userid = $arrtrans['user_id'];
                 $returntrans_bookid = $arrtrans['book_id'];
 
                 $act_returneddate   = $arrtrans['act_returneddate'];
-                
+
                 $return_transid = $returntrans -> returntransid($returntrans_userid,$returntrans_bookid);
                 $process        = $returntrans -> returnbook($return_transid,$act_returneddate);
                 $copy_id        = $returntrans -> returncopyid($return_transid);
@@ -531,7 +531,7 @@ class LibmagController extends ActiveController
 
                     $bookissued = $deluser -> getissuedbook($delete_userid);
                     if($bookissued == 0){
-                    
+
                         $userdeleted = $deluser -> deleteuser($delete_userid);
                         if($userdeleted == 1){
                             $msg = "user deleted";
@@ -561,7 +561,7 @@ class LibmagController extends ActiveController
 
     public function actionIncreasebookcount()
     {
-        
+
         $userr      = new Usertable();
         $role       = new Role();
         $updatebook = new Book();
@@ -582,7 +582,7 @@ class LibmagController extends ActiveController
                 $updatebook_id = $updatebook -> returnbookid($arrnewcopy['b_title']);
                 $maxcopynumber = $newcopy -> findmaxcopy($updatebook_id);
                 $addcount       = $arrnewcopy['newcopy_added'];
-                
+
                 $copyprocess = $newcopy -> addnewcopies($updatebook_id,$addcount,$maxcopynumber);
                 $bookprocess = $updatebook ->updatebookcount($updatebook_id,$addcount);
                 if($copyprocess && $bookprocess == 1){
