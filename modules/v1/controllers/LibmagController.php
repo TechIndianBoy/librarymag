@@ -18,6 +18,7 @@ use phpDocumentor\Reflection\Types\Integer;
 use Yii;
 use yii\filters\AccessControl;
 use yii\filters\auth\CompositeAuth;
+use yii\filters\HttpCache;
 use yii\helpers\Url;
 use yii\rest\ActiveController;
 use yii\web\BadRequestHttpException;
@@ -205,12 +206,21 @@ class LibmagController extends ActiveController
 
         try{
 
-            $sql  = "select u_password from users_table where u_username = '$username'";
+            $sql  = "select u_password, u_status from users_table where u_username = '$username'";
             $rslt = Yii::$app->db->createCommand($sql)->query()->read();
+            // return $rslt ;exit;
+
+            if($rslt){
+                if($rslt['u_status'] == 0){
+                    throw new HttpException(403,"user inactive.. please contact admin.");
+                }
+            }else{
+                throw new HttpException(403,"Username does not match");
+            }
 
             $pwdrslt = Yii::$app->getSecurity()->validatePassword($pwd,$rslt["u_password"]);
 
-            if($pwdrslt == 1 ){
+            if($pwdrslt == 1 && $rslt['u_status'] == 1){
 
                 $updateuser = new user;
                 $updateuser -> generateAccessToken();
